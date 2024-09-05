@@ -1,5 +1,14 @@
+require('dotenv').config();
+
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+const client = new Client({ 
+    intents: [
+        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildPresences // Añadido para manejar la presencia de usuarios
+    ] 
+});
 
 const ignoredChannels = new Set(); // Guardar canales ignorados
 
@@ -11,6 +20,7 @@ const updateChannelIndex = async (guild) => {
     // Obtener categorías y canales
     const categories = guild.channels.cache.filter(ch => ch.type === 4).sort((a, b) => a.position - b.position);
     const textChannels = guild.channels.cache.filter(ch => ch.type === 0 && !ignoredChannels.has(ch.id));
+    const forumChannels = guild.channels.cache.filter(ch => ch.type === 15 && !ignoredChannels.has(ch.id)); // Foros
 
     let description = '';
 
@@ -19,9 +29,13 @@ const updateChannelIndex = async (guild) => {
         description += `**${category.name}**\n`;
 
         const channelsInCategory = textChannels.filter(ch => ch.parentId === category.id);
+        const forumsInCategory = forumChannels.filter(ch => ch.parentId === category.id);
 
-        if (channelsInCategory.size > 0) {
+        if (channelsInCategory.size > 0 || forumsInCategory.size > 0) {
             channelsInCategory.forEach(ch => {
+                description += `• [${ch.name}](https://discord.com/channels/${guild.id}/${ch.id})\n`;
+            });
+            forumsInCategory.forEach(ch => {
                 description += `• [${ch.name}](https://discord.com/channels/${guild.id}/${ch.id})\n`;
             });
         } else {
@@ -29,12 +43,17 @@ const updateChannelIndex = async (guild) => {
         }
     });
 
-    // Añadir canales sin categoría
+    // Añadir canales y foros sin categoría
     const channelsWithoutCategory = textChannels.filter(ch => !ch.parentId);
-    if (channelsWithoutCategory.size > 0) {
+    const forumsWithoutCategory = forumChannels.filter(ch => !ch.parentId);
+
+    if (channelsWithoutCategory.size > 0 || forumsWithoutCategory.size > 0) {
         description += '**Sin Categoría**\n';
         channelsWithoutCategory.forEach(ch => {
-            description += `• [${ch.name}](https://discord.com/channels/${guild.id}/${ch.id})\n`;
+            description += `• [Canal de Texto: ${ch.name}](https://discord.com/channels/${guild.id}/${ch.id})\n`;
+        });
+        forumsWithoutCategory.forEach(ch => {
+            description += `• [Foro: ${ch.name}](https://discord.com/channels/${guild.id}/${ch.id})\n`;
         });
     }
 
@@ -94,6 +113,11 @@ client.on('channelCreate', (channel) => {
 // Evento cuando se elimina un canal
 client.on('channelDelete', (channel) => {
     updateChannelIndex(channel.guild);
+});
+
+// Evento cuando se actualiza un canal
+client.on('channelUpdate', (oldChannel, newChannel) => {
+    updateChannelIndex(newChannel.guild);
 });
 
 // Iniciar sesión en el bot
