@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 const ignoredChannels = new Set(); // Guardar canales ignorados
 
@@ -8,15 +8,39 @@ const updateChannelIndex = async (guild) => {
     const channel = guild.channels.cache.find(ch => ch.name === '「📦」indice' && ch.isTextBased());
     if (!channel) return;
 
-    // Generar la lista de canales, excluyendo los ignorados
-    const channelList = guild.channels.cache
-        .filter(ch => ch.type === 0 && !ignoredChannels.has(ch.id)) // Filtrar solo canales de texto no ignorados
-        .map(ch => `• [${ch.name}](https://discord.com/channels/${guild.id}/${ch.id})`)
-        .join('\n');
+    // Obtener categorías y canales
+    const categories = guild.channels.cache.filter(ch => ch.type === 4).sort((a, b) => a.position - b.position);
+    const textChannels = guild.channels.cache.filter(ch => ch.type === 0 && !ignoredChannels.has(ch.id));
+
+    let description = '';
+
+    // Añadir canales bajo sus categorías
+    categories.forEach(category => {
+        description += `**${category.name}**\n`;
+
+        const channelsInCategory = textChannels.filter(ch => ch.parentId === category.id);
+
+        if (channelsInCategory.size > 0) {
+            channelsInCategory.forEach(ch => {
+                description += `• [${ch.name}](https://discord.com/channels/${guild.id}/${ch.id})\n`;
+            });
+        } else {
+            description += '  *No hay canales en esta categoría.*\n';
+        }
+    });
+
+    // Añadir canales sin categoría
+    const channelsWithoutCategory = textChannels.filter(ch => !ch.parentId);
+    if (channelsWithoutCategory.size > 0) {
+        description += '**Sin Categoría**\n';
+        channelsWithoutCategory.forEach(ch => {
+            description += `• [${ch.name}](https://discord.com/channels/${guild.id}/${ch.id})\n`;
+        });
+    }
 
     const embed = new EmbedBuilder()
         .setTitle('Índice de Canales')
-        .setDescription(channelList || 'No hay canales disponibles.')
+        .setDescription(description || 'No hay canales disponibles.')
         .setColor(0x00AE86);
 
     // Obtener el último mensaje del canal "indice-canales"
