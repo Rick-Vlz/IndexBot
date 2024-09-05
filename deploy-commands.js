@@ -14,6 +14,18 @@ const commands = [
             },
         ],
     },
+    {
+        name: 'unignore',
+        description: 'Deja de ignorar un canal para que vuelva a aparecer en el índice',
+        options: [
+            {
+                name: 'channel',
+                type: 7, // Tipo para canal
+                description: 'Elige el canal a des-ignorar',
+                required: true,
+            },
+        ],
+    },
 ];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);

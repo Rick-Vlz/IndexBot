@@ -1,4 +1,3 @@
-require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -45,6 +44,15 @@ client.on('interactionCreate', async interaction => {
         ignoredChannels.add(channelToIgnore.id); // Añadir canal a la lista de ignorados
         await updateChannelIndex(guild); // Actualizar el índice sin el canal ignorado
         interaction.reply({ content: `El canal **${channelToIgnore.name}** ha sido ignorado.`, ephemeral: true });
+    }
+
+    if (commandName === 'unignore') {
+        const channelToUnignore = options.getChannel('channel');
+        if (!channelToUnignore) return interaction.reply({ content: 'Canal no válido.', ephemeral: true });
+
+        ignoredChannels.delete(channelToUnignore.id); // Eliminar canal de la lista de ignorados
+        await updateChannelIndex(guild); // Actualizar el índice con el canal des-ignorado
+        interaction.reply({ content: `El canal **${channelToUnignore.name}** ya no está ignorado.`, ephemeral: true });
     }
 });
 
