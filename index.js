@@ -15,6 +15,7 @@ const ignoredChannels = new Set(); // Guardar canales ignorados
 // Función para actualizar el índice de canales en un embed
 const updateChannelIndex = async (guild) => {
     const channel = guild.channels.cache.find(ch => ch.name === '「📦」indice' && ch.isTextBased());
+    //const channel = guild.channels.cache.find(ch => ch.name === 'Index' && ch.isTextBased()); This is the Default one for large scale servers
     if (!channel) return;
 
     // Obtener categorías y canales
